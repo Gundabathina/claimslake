@@ -2,7 +2,13 @@
 
 Interview preparation material for discussing ClaimsLake in Data Engineer interviews.
 
-Will include:
+## Milestone sections (added as each milestone is built)
+
+- [Milestone 2 - Ingestion (Bronze)](02_ingestion_bronze.md) - 20 Q&A on the
+  ingestion framework: architecture, idempotency, incremental vs CDC, schema
+  drift, retries, metadata tracking, and how it would map to S3 / AWS Glue.
+
+## Planned (later milestones)
 
 - 30-second, 2-minute, and 5-minute project pitches
 - Why each technology was chosen, and what the alternatives were
