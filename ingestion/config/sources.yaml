@@ -1,0 +1,152 @@
+# ClaimsLake ingestion source configuration
+#
+# This file is the single source of truth for what the ingestion engine
+# processes. Adding a new source dataset means adding an entry here - not
+# writing new ingestion code.
+#
+# Field reference:
+#   description         human-readable purpose of the source
+#   source_dir          directory (relative to repo root) scanned for files
+#   file_pattern        glob pattern used to discover source files
+#   file_format         currently only "csv" is supported
+#   load_type           "full" (whole table refreshed each run) or
+#                       "incremental" (new files appended; already-ingested
+#                       files are skipped based on metadata + file hash)
+#   primary_key         column(s) that uniquely identify a record. Used for
+#                       documentation and later Silver-layer dedup; NOT
+#                       enforced in Bronze (Bronze preserves raw data as-is).
+#   expected_columns    the canonical/baseline column list for this source
+#   required_columns    columns that MUST be present, or ingestion fails
+#   schema_drift_policy fail | warn | allow - behavior when a file has
+#                       columns beyond expected_columns
+#   incremental_key     "file" means incremental tracking is at the file
+#                       level (file name + content hash), NOT the row level.
+#                       This is NOT change data capture (CDC).
+#   bronze_path         output location under bronze/, relative to repo root
+#
+# NOTE: source_dir defaults to data/sample so the pipeline runs immediately
+# against the committed sample files. To ingest a full locally-generated
+# dataset, either point source_dir at that directory or place the files in
+# data/sample. The glob patterns already match both e.g. members.csv and
+# members_sample.csv.
+
+sources:
+
+  members:
+    description: "Member enrollment records"
+    source_dir: data/sample
+    file_pattern: "members*.csv"
+    file_format: csv
+    load_type: full
+    primary_key: [member_id]
+    expected_columns:
+      - member_id
+      - first_name
+      - last_name
+      - date_of_birth
+      - gender
+      - enrollment_start_date
+      - enrollment_end_date
+      - plan_type
+      - state
+      - zip_code
+      - source_system
+    required_columns:
+      - member_id
+      - first_name
+      - last_name
+      - date_of_birth
+      - gender
+      - enrollment_start_date
+      - plan_type
+      - state
+      - source_system
+    schema_drift_policy: fail
+    incremental_key: null
+    bronze_path: bronze/members
+
+  providers:
+    description: "Provider network records"
+    source_dir: data/sample
+    file_pattern: "providers*.csv"
+    file_format: csv
+    load_type: full
+    primary_key: [provider_id]
+    expected_columns:
+      - provider_id
+      - provider_name
+      - specialty
+      - npi
+      - network_status
+      - address_state
+      - effective_date
+      - source_system
+    required_columns:
+      - provider_id
+      - provider_name
+      - npi
+      - network_status
+      - address_state
+      - effective_date
+      - source_system
+    schema_drift_policy: fail
+    incremental_key: null
+    bronze_path: bronze/providers
+
+  diagnoses:
+    description: "Diagnosis reference / lookup table"
+    source_dir: data/sample
+    file_pattern: "diagnoses*.csv"
+    file_format: csv
+    load_type: full
+    primary_key: [diagnosis_code]
+    expected_columns:
+      - diagnosis_code
+      - diagnosis_description
+      - category
+    required_columns:
+      - diagnosis_code
+      - diagnosis_description
+      - category
+    schema_drift_policy: fail
+    incremental_key: null
+    bronze_path: bronze/diagnoses
+
+  claims:
+    description: "Claims batches: multi-file, incremental, includes a schema-drift batch"
+    source_dir: data/sample
+    file_pattern: "claims_batch_*.csv"
+    file_format: csv
+    load_type: incremental
+    primary_key: [claim_id]
+    expected_columns:
+      - claim_id
+      - member_id
+      - provider_id
+      - diagnosis_code
+      - service_date
+      - submission_date
+      - billed_amount
+      - paid_amount
+      - claim_status
+      - denial_reason
+      - ingestion_batch_id
+      - source_system
+    required_columns:
+      - claim_id
+      - member_id
+      - provider_id
+      - diagnosis_code
+      - service_date
+      - submission_date
+      - billed_amount
+      - claim_status
+      - ingestion_batch_id
+      - source_system
+    # 'warn' because claims_batch_2.csv legitimately adds an adjustment_amount
+    # column (real schema evolution). We must NOT silently ignore it and must
+    # NOT hard-fail over an expected additive change - so we log it, record it
+    # in metadata, and carry the extra column through to Bronze.
+    schema_drift_policy: warn
+    incremental_key: file
+    bronze_path: bronze/claims
