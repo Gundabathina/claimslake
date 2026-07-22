@@ -1,0 +1,9 @@
+# Core dependencies for the ClaimsLake ingestion layer (Milestone 2).
+# Kept intentionally minimal - see ingestion/README.md for why each is here.
+
+PyYAML>=6.0      # parse ingestion/config/sources.yaml
+pandas>=2.0      # tabular representation of rows before writing Parquet
+pyarrow>=14.0    # Parquet read/write engine used by pandas.to_parquet
+
+# Testing
+pytest>=7.4
