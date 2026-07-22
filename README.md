@@ -82,7 +82,7 @@ claimslake/
 ## Project status / roadmap
 
 - [x] Milestone 0 — Repository scaffolding
-- [ ] Milestone 1 — Synthetic data generation
+- [x] Milestone 1 — Synthetic data generation
 - [ ] Milestone 2 — Python ingestion layer (Bronze)
 - [ ] Milestone 3 — PySpark Silver transformations
 - [ ] Milestone 4 — Gold star schema via dbt
