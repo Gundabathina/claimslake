@@ -83,7 +83,7 @@ claimslake/
 
 - [x] Milestone 0 — Repository scaffolding
 - [x] Milestone 1 — Synthetic data generation
-- [ ] Milestone 2 — Python ingestion layer (Bronze)
+- [x] Milestone 2 — Python ingestion layer (Bronze)
 - [ ] Milestone 3 — PySpark Silver transformations
 - [ ] Milestone 4 — Gold star schema via dbt
 - [ ] Milestone 5 — Analytical SQL layer
@@ -95,6 +95,16 @@ claimslake/
 - [ ] Milestone 11 — Optional Kafka streaming demo
 - [ ] Milestone 12 — Full documentation
 - [ ] Milestone 13 — Interview guide
+
+## Running the ingestion layer (Milestone 2)
+
+```bash
+pip install -r requirements.txt
+python -m ingestion.src.ingestion_engine --all   # load all sources into Bronze
+pytest tests/ingestion -v                         # run the ingestion tests
+```
+
+The Bronze ingestion framework is configuration-driven and demonstrates full/incremental loads, idempotency (SHA-256 file hashing), retry logic, schema-drift detection, structured logging, and a SQLite ingestion audit log. It preserves source data faithfully in Bronze (Parquet, partitioned by ingestion date) and performs no business transformation. See ingestion/README.md for the full design and docs/interview_guide/02_ingestion_bronze.md for interview Q&A. All data is synthetic.
 
 ## Honesty note
 
