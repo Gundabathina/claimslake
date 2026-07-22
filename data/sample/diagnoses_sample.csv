@@ -1,0 +1,13 @@
+diagnosis_code,diagnosis_description,category
+E11.9,Type 2 diabetes mellitus without complications,Endocrine
+I10,Essential (primary) hypertension,Circulatory
+J45.909,"Unspecified asthma, uncomplicated",Respiratory
+M54.5,Low back pain,Musculoskeletal
+F41.1,Generalized anxiety disorder,Mental Health
+K21.9,Gastro-esophageal reflux disease without esophagitis,Digestive
+N39.0,"Urinary tract infection, site not specified",Genitourinary
+S93.401A,"Sprain of ankle, initial encounter",Injury
+R51,Headache,Symptoms
+E78.5,"Hyperlipidemia, unspecified",Endocrine
+J06.9,"Acute upper respiratory infection, unspecified",Respiratory
+M25.50,Pain in unspecified joint,Musculoskeletal
