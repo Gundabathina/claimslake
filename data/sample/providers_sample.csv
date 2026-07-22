@@ -1,0 +1,14 @@
+provider_id,provider_name,specialty,npi,network_status,address_state,effective_date,source_system
+P100004,Dr. David Martinez,General Surgery,1975391320,In-Network,MI,2021-08-25,PROVIDER_NETWORK_SYS
+P100005,Dr. James Lopez,Family Medicine,6250386720,In-Network,PA,2019-05-17,PROVIDER_NETWORK_SYS
+P100009,Dr. Barbara Robinson,Pulmonology,3577400518,In-Network,AZ,2022-08-20,PROVIDER_NETWORK_SYS
+P100011,Dr. Mary Miller,Orthopedics,3392003232,In-Network,NC,2021-01-03,PROVIDER_NETWORK_SYS
+P100006,Dr. Matthew Jones,Pulmonology,8224026070,In-Network,IL,2021-10-09,PROVIDER_NETWORK_SYS
+P100002,Dr. Karen Lee,Cardiology,7689231860,In-Network,OH,2022-06-03,PROVIDER_NETWORK_SYS
+P100008,Dr. Sarah Ramirez,Orthopedics,2149368785,In-Network,NY,2020-11-29,PROVIDER_NETWORK_SYS
+P100003,Dr. Mary Lewis,Family Medicine,2164976016,In-Network,GA,2020-06-30,PROVIDER_NETWORK_SYS
+P100000,Dr. Matthew Lee,Psychiatry,4034712429,In-Network,NY,2022-06-16,PROVIDER_NETWORK_SYS
+P100001,Dr. Joseph Thompson,Radiology,4034712429,In-Network,MI,2020-10-30,PROVIDER_NETWORK_SYS
+P100007,Dr. Lisa Garcia,Cardiology,6054798851,In-Network,PA,2018-07-29,PROVIDER_NETWORK_SYS
+P100010,Dr. Jennifer Moore,Pediatrics,5165217768,In-Network,NJ,2018-02-12,PROVIDER_NETWORK_SYS
+P100003,Dr. Mary Lewis,Family Medicine,2164976016,Out-of-Network,GA,2025-02-05,PROVIDER_NETWORK_SYS
