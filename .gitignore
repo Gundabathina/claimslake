@@ -216,3 +216,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+# ---- ClaimsLake project-specific (Milestone 2) ----
+# Generated data-lake and ingestion artifacts (regenerated locally, not committed).
+bronze/**
+!bronze/README.md
+ingestion/metadata/*.db
+ingestion/logs/
+logs/
