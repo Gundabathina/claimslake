@@ -1,7 +1,7 @@
 """
 test_cleaners.py
 
-Tests for pyspark/src/cleaners.py. These exercise the real cleaning
+Tests for spark_jobs/src/cleaners.py. These exercise the real cleaning
 functions on tiny in-memory DataFrames: blank-string to null conversion,
 type casting, and claims batch canonicalization.
 """
@@ -11,7 +11,7 @@ import decimal
 
 from pyspark.sql import Row
 
-from pyspark.src import cleaners
+from spark_jobs.src import cleaners
 
 
 def test_blank_to_null_converts_empty_strings(spark):
