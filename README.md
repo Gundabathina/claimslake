@@ -84,7 +84,7 @@ claimslake/
 - [x] Milestone 0 — Repository scaffolding
 - [x] Milestone 1 — Synthetic data generation
 - [x] Milestone 2 — Python ingestion layer (Bronze)
-- [ ] Milestone 3 — PySpark Silver transformations
+- [x] Milestone 3 — PySpark Silver transformations
 - [ ] Milestone 4 — Gold star schema via dbt
 - [ ] Milestone 5 — Analytical SQL layer
 - [ ] Milestone 6 — Airflow orchestration
@@ -105,6 +105,17 @@ pytest tests/ingestion -v                         # run the ingestion tests
 ```
 
 The Bronze ingestion framework is configuration-driven and demonstrates full/incremental loads, idempotency (SHA-256 file hashing), retry logic, schema-drift detection, structured logging, and a SQLite ingestion audit log. It preserves source data faithfully in Bronze (Parquet, partitioned by ingestion date) and performs no business transformation. See ingestion/README.md for the full design and docs/interview_guide/02_ingestion_bronze.md for interview Q&A. All data is synthetic.
+
+## Running the Silver layer (Milestone 3)
+
+```bash
+pip install -r requirements.txt
+python -m ingestion.src.ingestion_engine --all   # SOURCE -> BRONZE
+python -m pyspark.src.silver_pipeline --all        # BRONZE -> SILVER
+pytest tests/pyspark -v                            # run the PySpark tests
+```
+
+The PySpark Silver layer reads Bronze Parquet and produces cleaned, typed, deduplicated, validated datasets under `silver/`, quarantining invalid records (with reasons) under `silver/quarantine/` rather than dropping them, and writing data-quality metrics to `data_quality/metrics/`. It preserves provider historical versions so the Gold layer can later build an SCD Type 2 dimension, normalizes the claims_batch_1/claims_batch_2 schemas, flags late-arriving claims, and checks referential integrity with broadcast joins. Requires a JVM (Java 11/17) for Spark. See pyspark/README.md for the full design and docs/interview_guide/03_pyspark_silver.md for interview Q&A. All data is synthetic.
 
 ## Honesty note
 
