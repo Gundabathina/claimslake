@@ -1,6 +1,6 @@
 # Silver Data Dictionary - ClaimsLake
 
-Canonical Silver schemas produced by `pyspark/src` (Milestone 3). All
+Canonical Silver schemas produced by `spark_jobs/src` (Milestone 3). All
 data is synthetic. Bronze source schemas are in `source_schemas.md`;
 Silver adds real types, standardization, validation, and lineage columns.
 Bronze stores everything as strings, so all types below are the result of
