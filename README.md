@@ -1,4 +1,4 @@
-# ClaimsLake — Healthcare Claims Data Engineering Platform
+# ClaimsLake â Healthcare Claims Data Engineering Platform
 
 **Status:** Actively under construction (portfolio project, built incrementally in public commits). This README is updated at every milestone.
 
@@ -28,7 +28,7 @@ Data Quality & Validation checks
 Silver Layer (PySpark: cleaned, deduplicated, standardized)
         |
         v
-Gold Layer (dbt + SQL: star schema — fact_claims, dim_member, dim_provider (SCD2), dim_diagnosis, dim_date)
+Gold Layer (dbt + SQL: star schema â fact_claims, dim_member, dim_provider (SCD2), dim_diagnosis, dim_date)
         |
         v
 Analytics Warehouse (DuckDB/Postgres locally; Redshift design for AWS)
@@ -63,38 +63,38 @@ Full architecture diagrams and data lineage docs live in [`docs/architecture`](d
 
 ```
 claimslake/
-├── docs/                 architecture, data dictionary, lineage, interview guide, screenshots
-├── data/                 sample synthetic data
-├── ingestion/            Python ingestion scripts
-├── processing/           bronze / silver / gold processing code
-├── pyspark/              PySpark transformation jobs
-├── airflow/dags/         Airflow DAG definitions
-├── dbt/                  dbt project (staging, marts, tests)
-├── sql/                  DDL and analytical SQL
-├── streaming/            optional local Kafka demo
-├── tests/                pytest unit and data quality tests
-├── terraform/            AWS reference infrastructure as code
-├── docker/               Dockerfiles
-├── scripts/              helper/dev scripts
-└── config/               pipeline configuration
+âââ docs/                 architecture, data dictionary, lineage, interview guide, screenshots
+âââ data/                 sample synthetic data
+âââ ingestion/            Python ingestion scripts
+âââ processing/           bronze / silver / gold processing code
+âââ spark_jobs/              PySpark transformation jobs
+âââ airflow/dags/         Airflow DAG definitions
+âââ dbt/                  dbt project (staging, marts, tests)
+âââ sql/                  DDL and analytical SQL
+âââ streaming/            optional local Kafka demo
+âââ tests/                pytest unit and data quality tests
+âââ terraform/            AWS reference infrastructure as code
+âââ docker/               Dockerfiles
+âââ scripts/              helper/dev scripts
+âââ config/               pipeline configuration
 ```
 
 ## Project status / roadmap
 
-- [x] Milestone 0 — Repository scaffolding
-- [x] Milestone 1 — Synthetic data generation
-- [x] Milestone 2 — Python ingestion layer (Bronze)
-- [x] Milestone 3 — PySpark Silver transformations
-- [ ] Milestone 4 — Gold star schema via dbt
-- [ ] Milestone 5 — Analytical SQL layer
-- [ ] Milestone 6 — Airflow orchestration
-- [ ] Milestone 7 — Testing suite
-- [ ] Milestone 8 — Docker Compose full stack
-- [ ] Milestone 9 — GitHub Actions CI/CD
-- [ ] Milestone 10 — Terraform AWS reference architecture
-- [ ] Milestone 11 — Optional Kafka streaming demo
-- [ ] Milestone 12 — Full documentation
-- [ ] Milestone 13 — Interview guide
+- [x] Milestone 0 â Repository scaffolding
+- [x] Milestone 1 â Synthetic data generation
+- [x] Milestone 2 â Python ingestion layer (Bronze)
+- [x] Milestone 3 â PySpark Silver transformations
+- [ ] Milestone 4 â Gold star schema via dbt
+- [ ] Milestone 5 â Analytical SQL layer
+- [ ] Milestone 6 â Airflow orchestration
+- [ ] Milestone 7 â Testing suite
+- [ ] Milestone 8 â Docker Compose full stack
+- [ ] Milestone 9 â GitHub Actions CI/CD
+- [ ] Milestone 10 â Terraform AWS reference architecture
+- [ ] Milestone 11 â Optional Kafka streaming demo
+- [ ] Milestone 12 â Full documentation
+- [ ] Milestone 13 â Interview guide
 
 ## Running the ingestion layer (Milestone 2)
 
@@ -111,11 +111,11 @@ The Bronze ingestion framework is configuration-driven and demonstrates full/inc
 ```bash
 pip install -r requirements.txt
 python -m ingestion.src.ingestion_engine --all   # SOURCE -> BRONZE
-python -m pyspark.src.silver_pipeline --all        # BRONZE -> SILVER
+python -m spark_jobs.src.silver_pipeline --all        # BRONZE -> SILVER
 pytest tests/pyspark -v                            # run the PySpark tests
 ```
 
-The PySpark Silver layer reads Bronze Parquet and produces cleaned, typed, deduplicated, validated datasets under `silver/`, quarantining invalid records (with reasons) under `silver/quarantine/` rather than dropping them, and writing data-quality metrics to `data_quality/metrics/`. It preserves provider historical versions so the Gold layer can later build an SCD Type 2 dimension, normalizes the claims_batch_1/claims_batch_2 schemas, flags late-arriving claims, and checks referential integrity with broadcast joins. Requires a JVM (Java 11/17) for Spark. See pyspark/README.md for the full design and docs/interview_guide/03_pyspark_silver.md for interview Q&A. All data is synthetic.
+The PySpark Silver layer reads Bronze Parquet and produces cleaned, typed, deduplicated, validated datasets under `silver/`, quarantining invalid records (with reasons) under `silver/quarantine/` rather than dropping them, and writing data-quality metrics to `data_quality/metrics/`. It preserves provider historical versions so the Gold layer can later build an SCD Type 2 dimension, normalizes the claims_batch_1/claims_batch_2 schemas, flags late-arriving claims, and checks referential integrity with broadcast joins. Requires a JVM (Java 11/17) for Spark. See spark_jobs/README.md for the full design and docs/interview_guide/03_pyspark_silver.md for interview Q&A. All data is synthetic.
 
 ## Honesty note
 
@@ -123,4 +123,4 @@ This is a personal portfolio project built with synthetic data to demonstrate da
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT â see [LICENSE](LICENSE).
