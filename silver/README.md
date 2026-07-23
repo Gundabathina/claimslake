@@ -1,7 +1,7 @@
 # silver/
 
 Local Silver layer output of the medallion architecture. The PySpark
-Silver pipeline (see the `pyspark/` package) reads Bronze Parquet and
+Silver pipeline (see the `spark_jobs/` package) reads Bronze Parquet and
 writes cleaned, validated, standardized data here as Parquet:
 
 ```
@@ -29,7 +29,7 @@ To populate it locally (Bronze must exist first):
 ```
 pip install -r requirements.txt
 python -m ingestion.src.ingestion_engine --all     # SOURCE  -> BRONZE
-python -m pyspark.src.silver_pipeline --all         # BRONZE  -> SILVER
+python -m spark_jobs.src.silver_pipeline --all         # BRONZE  -> SILVER
 ```
 
 ## What Silver does (and does not) do
@@ -44,7 +44,7 @@ dropped or patched.
 Providers are deliberately NOT collapsed to one row per provider: rows
 that represent real network-status/effective-date changes are preserved
 as distinct versions so the future Gold layer can build an SCD Type 2
-dimension. See `pyspark/README.md` and
+dimension. See `spark_jobs/README.md` and
 `docs/interview_guide/03_pyspark_silver.md` for the full design.
 
 All data is synthetic.
