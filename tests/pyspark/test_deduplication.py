@@ -1,14 +1,14 @@
 """
 test_deduplication.py
 
-Tests for pyspark/src/deduplication.py: exact-duplicate-row collapsing,
+Tests for spark_jobs/src/deduplication.py: exact-duplicate-row collapsing,
 deterministic business-key survivor selection, and the history-counting
 helper used to keep provider versions.
 """
 
 from pyspark.sql import Row
 
-from pyspark.src import deduplication
+from spark_jobs.src import deduplication
 
 
 def test_drop_exact_duplicate_rows(spark):
