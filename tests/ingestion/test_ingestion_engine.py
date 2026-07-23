@@ -54,9 +54,7 @@ def _isolate_metadata_db(tmp_path, monkeypatch):
 
 def test_full_load_success(tmp_path):
     _write_source_csv(tmp_path, "members_sample.csv",
-                      "member_id,first_name
-M0000001,Alex
-")
+                      "member_id,first_name\nM0000001,Alex\n")
     config = _members_config(tmp_path)
 
     results = ingest_source("members", {"members": config})
@@ -76,9 +74,7 @@ M0000001,Alex
 
 def test_idempotent_reprocessing_skips_second_run(tmp_path):
     _write_source_csv(tmp_path, "members_sample.csv",
-                      "member_id,first_name
-M0000001,Alex
-")
+                      "member_id,first_name\nM0000001,Alex\n")
     config = _members_config(tmp_path)
 
     first = ingest_source("members", {"members": config})
@@ -93,9 +89,7 @@ M0000001,Alex
 
 def test_force_reprocesses_already_ingested_file(tmp_path):
     _write_source_csv(tmp_path, "members_sample.csv",
-                      "member_id,first_name
-M0000001,Alex
-")
+                      "member_id,first_name\nM0000001,Alex\n")
     config = _members_config(tmp_path)
 
     ingest_source("members", {"members": config})
@@ -105,9 +99,7 @@ M0000001,Alex
 
 
 def test_missing_required_column_fails_and_writes_no_bronze(tmp_path):
-    _write_source_csv(tmp_path, "members_sample.csv", "member_id
-M0000001
-")
+    _write_source_csv(tmp_path, "members_sample.csv", "member_id\nM0000001\n")
     config = _members_config(tmp_path)
 
     results = ingest_source("members", {"members": config})
@@ -119,9 +111,7 @@ M0000001
 
 def test_schema_drift_warn_writes_bronze_with_drift_status(tmp_path):
     _write_source_csv(tmp_path, "members_sample.csv",
-                      "member_id,first_name,extra_col
-M0000001,Alex,surprise
-")
+                      "member_id,first_name,extra_col\nM0000001,Alex,surprise\n")
     config = _members_config(tmp_path, schema_drift_policy="warn")
 
     results = ingest_source("members", {"members": config})
@@ -133,9 +123,7 @@ M0000001,Alex,surprise
 
 def test_schema_drift_fail_policy_fails(tmp_path):
     _write_source_csv(tmp_path, "members_sample.csv",
-                      "member_id,first_name,extra_col
-M0000001,Alex,surprise
-")
+                      "member_id,first_name,extra_col\nM0000001,Alex,surprise\n")
     config = _members_config(tmp_path, schema_drift_policy="fail")
 
     results = ingest_source("members", {"members": config})
