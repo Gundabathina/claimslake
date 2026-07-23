@@ -21,8 +21,8 @@ SOURCE -> PYTHON INGESTION -> BRONZE -> PYSPARK SILVER -> (GOLD, later)
                                              +--> QUARANTINE
 ```
 
-The Silver stage is implemented in the `pyspark/` package (single
-source of truth; see `pyspark/README.md`) and reads Bronze Parquet,
+The Silver stage is implemented in the `spark_jobs/` package (single
+source of truth; see `spark_jobs/README.md`) and reads Bronze Parquet,
 producing:
 
 - `silver/<dataset>/` - cleaned, typed, deduplicated, validated data.
@@ -37,6 +37,6 @@ deterministic deduplication, PRESERVATION of provider historical versions
 for future SCD Type 2, broadcast-join referential-integrity checks,
 late-arriving claim flagging, claims batch-1/batch-2 schema normalization,
 and date-based partitioning of the claims fact. Full rationale is in
-`pyspark/README.md` and `docs/interview_guide/03_pyspark_silver.md`;
+`spark_jobs/README.md` and `docs/interview_guide/03_pyspark_silver.md`;
 schemas are in `docs/data_dictionary/silver_schemas.md`; lineage is in
 `docs/data_lineage/`.
