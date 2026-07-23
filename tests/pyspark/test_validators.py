@@ -1,14 +1,14 @@
 """
 test_validators.py
 
-Tests for pyspark/src/validators.py. Rows are built as raw strings and
+Tests for spark_jobs/src/validators.py. Rows are built as raw strings and
 run through the real cleaners first, so these exercise the full
 clean -> validate -> split path (not just isolated helpers).
 """
 
 from pyspark.sql import Row, functions as F
 
-from pyspark.src import cleaners, validators
+from spark_jobs.src import cleaners, validators
 
 
 def _members(spark, rows):
