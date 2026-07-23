@@ -1,7 +1,7 @@
 # Interview Guide - Milestone 3: PySpark Silver Layer
 
 Every answer below is grounded in what this project actually implements
-(see `pyspark/src/`). All data is synthetic. Where a technique is only
+(see `spark_jobs/src/`). All data is synthetic. Where a technique is only
 described (not implemented at scale), that is stated plainly.
 
 ## 1. Why PySpark for the Silver layer?
@@ -158,13 +158,13 @@ claims), and replace per-run `count()` metrics with accumulators or
 approximate counts to avoid extra passes.
 
 ## 24. How would this run on Databricks?
-The same `pyspark.src` modules run as a Databricks job/notebook; you drop
+The same `spark_jobs.src` modules run as a Databricks job/notebook; you drop
 the local `spark_session` config (the platform provides the session),
 point input/output paths at DBFS/S3, and schedule it with Databricks
 Workflows. No transformation code changes.
 
 ## 25. How would this run with AWS Glue?
-Glue runs Spark too. You would package `pyspark/src` as a Glue job, read
+Glue runs Spark too. You would package `spark_jobs/src` as a Glue job, read
 Bronze from S3, write Silver back to S3, and register schemas in the Glue
 Data Catalog (replacing local partition-directory listing with catalog
 partitions). The transformation logic is unchanged; only IO and partition
