@@ -1,4 +1,4 @@
-# ClaimsLake — developer convenience commands
+# ClaimsLake â developer convenience commands
 # Usage: make <target>
 
 .PHONY: help up down logs generate-data ingest test lint dbt-run dbt-test airflow-up clean
@@ -36,7 +36,7 @@ test:
 	pytest tests/ -v
 
 lint:
-	python -m flake8 ingestion pyspark tests scripts
+	python -m flake8 ingestion spark_jobs tests scripts
 
 dbt-run:
 	cd dbt && dbt run
