@@ -9,3 +9,4 @@
 pythonpath = ["."]
 testpaths = ["tests"]
 addopts = "-v"
+import-mode = "importlib"
