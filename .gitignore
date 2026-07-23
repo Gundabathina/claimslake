@@ -223,3 +223,16 @@ bronze/**
 ingestion/metadata/*.db
 ingestion/logs/
 logs/
+
+# ---- ClaimsLake project-specific (Milestone 3 - Silver) ----
+# Generated Silver output and data-quality metrics (regenerated locally).
+silver/**
+!silver/README.md
+data_quality/metrics/**
+!data_quality/metrics/README.md
+# Local Spark artifacts
+spark-warehouse/
+metastore_db/
+derby.log
+*.crc
+pyspark/logs/
