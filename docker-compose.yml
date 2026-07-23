@@ -24,7 +24,7 @@ x-airflow-common: &airflow-common
   volumes:
     - ./airflow/dags:/opt/airflow/dags
     - ./processing:/opt/airflow/processing
-    - ./pyspark:/opt/airflow/pyspark
+    - ./spark_jobs:/opt/airflow/spark_jobs
     - ./ingestion:/opt/airflow/ingestion
     - ./config:/opt/airflow/config
     - airflow_logs:/opt/airflow/logs
