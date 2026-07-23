@@ -1,9 +1,24 @@
 # ClaimsLake - project tooling configuration.
 #
-# Configures pytest so that running 'pytest' from the repository root can
-# import the ingestion package (via pythonpath) and discovers tests under
-# tests/. This is why the ingestion CLI and the test suite both work when
-# invoked from the repo root.
+# Declares the first-party ingestion package as installable (pip install -e .)
+# so that "import ingestion.src..." resolves through the installed package,
+# and configures pytest test discovery under tests/.
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "claimslake"
+version = "0.1.0"
+description = "ClaimsLake ingestion layer (Milestone 2)."
+requires-python = ">=3.11"
+dependencies = [
+    "PyYAML>=6.0",
+]
+
+[tool.setuptools]
+packages = ["ingestion", "ingestion.src"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
