@@ -2,7 +2,7 @@
 test_silver_pipeline.py
 
 Integration-style tests that run the real per-dataset Silver builders
-(pyspark/src/transformations.py) against small in-memory Bronze
+(spark_jobs/src/transformations.py) against small in-memory Bronze
 DataFrames, plus one end-to-end reader test that writes two claims
 Parquet batches with different schemas and reads them back to prove
 schema normalization works. No mocking of the transformation logic.
@@ -13,8 +13,8 @@ import os
 import pandas as pd
 from pyspark.sql import Row
 
-from pyspark.src import cleaners, transformations
-from pyspark.src.readers import read_incremental_source
+from spark_jobs.src import cleaners, transformations
+from spark_jobs.src.readers import read_incremental_source
 
 TS1 = "2024-01-01T00:00:00+00:00"
 TS2 = "2024-05-01T00:00:00+00:00"
