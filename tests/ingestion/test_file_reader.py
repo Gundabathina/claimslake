@@ -31,9 +31,7 @@ def _make_source_config(tmp_path, file_pattern="members*.csv"):
 
 
 def test_discover_files_finds_matching_csv(tmp_path):
-    (tmp_path / "members_sample.csv").write_text("member_id,first_name
-M0000001,Alex
-")
+    (tmp_path / "members_sample.csv").write_text("member_id,first_name\nM0000001,Alex\n")
     config = _make_source_config(tmp_path)
 
     discovered = discover_files(config)
@@ -50,31 +48,22 @@ def test_discover_files_returns_empty_when_no_match(tmp_path):
 
 def test_compute_file_hash_is_deterministic(tmp_path):
     p = tmp_path / "a.csv"
-    p.write_text("member_id,first_name
-M0000001,Alex
-")
+    p.write_text("member_id,first_name\nM0000001,Alex\n")
     assert compute_file_hash(str(p)) == compute_file_hash(str(p))
 
 
 def test_compute_file_hash_changes_with_content(tmp_path):
     p = tmp_path / "a.csv"
-    p.write_text("member_id,first_name
-M0000001,Alex
-")
+    p.write_text("member_id,first_name\nM0000001,Alex\n")
     h1 = compute_file_hash(str(p))
-    p.write_text("member_id,first_name
-M0000002,Sam
-")
+    p.write_text("member_id,first_name\nM0000002,Sam\n")
     h2 = compute_file_hash(str(p))
     assert h1 != h2
 
 
 def test_read_csv_returns_header_and_rows(tmp_path):
     p = tmp_path / "a.csv"
-    p.write_text("member_id,first_name
-M0000001,Alex
-M0000002,Sam
-")
+    p.write_text("member_id,first_name\nM0000001,Alex\nM0000002,Sam\n")
 
     header, rows = read_csv(str(p))
 
