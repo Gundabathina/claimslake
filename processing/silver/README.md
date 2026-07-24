@@ -2,9 +2,9 @@
 
 Conceptual placeholder for the Silver processing stage. This directory
 was scaffolded in Milestone 0 to describe the medallion stages; the
-ACTUAL Silver implementation lives in the `pyspark/` package.
+ACTUAL Silver implementation lives in the `spark_jobs/` package.
 
-- Silver code (source of truth): `pyspark/src/` (see `pyspark/README.md`)
+- Silver code (source of truth): `spark_jobs/src/` (see `spark_jobs/README.md`)
 - Silver output (generated): `silver/`
 - Rejected records: `silver/quarantine/`
 - Data-quality metrics: `data_quality/metrics/`
@@ -14,7 +14,7 @@ ACTUAL Silver implementation lives in the `pyspark/` package.
 Run the Silver layer with:
 
 ```
-python -m pyspark.src.silver_pipeline --all
+python -m spark_jobs.src.silver_pipeline --all
 ```
 
 Responsibilities implemented (Milestone 3): data cleaning and type
