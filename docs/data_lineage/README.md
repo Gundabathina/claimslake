@@ -9,7 +9,7 @@ layers to its original source field. All data is synthetic.
 SOURCE CSV
   -> PYTHON INGESTION (ingestion/)         raw strings preserved, technical metadata added
   -> BRONZE (bronze/, Parquet)             ingestion_date partitions; all columns string
-  -> PYSPARK SILVER (pyspark/, Parquet)    typed, cleaned, deduped, validated
+  -> PYSPARK SILVER (spark_jobs/, Parquet)    typed, cleaned, deduped, validated
        |-> silver/<dataset>                records that passed validation
        |-> silver/quarantine/<dataset>     records that failed (with rejection_reason)
        +-> data_quality/metrics/           per-run JSON metrics
