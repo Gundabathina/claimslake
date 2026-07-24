@@ -2,7 +2,7 @@
 
 Generated data-quality metrics from the Silver pipeline. Every Silver run
 writes one JSON file per dataset here, populated ONLY from real pipeline
-execution (see `pyspark/src/writers.py` and `transformations.py`) -
+execution (see `spark_jobs/src/writers.py` and `transformations.py`) -
 no metric is ever hard-coded or estimated.
 
 Two files are written per dataset:
@@ -26,7 +26,7 @@ The JSON metric files are build artifacts and are git-ignored (see
 `.gitignore`); only this README is tracked. Regenerate them locally:
 
 ```
-python -m pyspark.src.silver_pipeline --all
+python -m spark_jobs.src.silver_pipeline --all
 ```
 
 All data is synthetic.
