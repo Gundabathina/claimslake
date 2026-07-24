@@ -12,12 +12,21 @@ import os
 
 import pandas as pd
 from pyspark.sql import Row
+from pyspark.sql.types import StringType, StructField, StructType
 
 from spark_jobs.src import cleaners, transformations
 from spark_jobs.src.readers import read_incremental_source
+from spark_jobs.src.schemas import BRONZE_CLAIMS_CANONICAL_COLUMNS
 
 TS1 = "2024-01-01T00:00:00+00:00"
 TS2 = "2024-05-01T00:00:00+00:00"
+
+# Bronze is all-string (see spark_jobs/src/schemas.py). Passing this
+# explicit schema is required because adjustment_amount is None on every
+# row in the end-to-end test, so PySpark 4.2 cannot infer its type.
+_BRONZE_CLAIMS_SCHEMA = StructType(
+    [StructField(c, StringType(), True) for c in BRONZE_CLAIMS_CANONICAL_COLUMNS]
+)
 
 
 def _member(**kw):
@@ -100,7 +109,7 @@ def test_build_silver_claims_end_to_end(spark):
         _claim(claim_id="ORPHAN", diagnosis_code="Z99"),      # bad diagnosis FK
         _claim(claim_id="LATE", service_date="2024-01-01",
                submission_date="2024-06-01"),                 # late arriving (valid)
-    ])
+    ], schema=_BRONZE_CLAIMS_SCHEMA)
     valid, quarantine, metrics = transformations.build_silver_claims(
         df, members, providers, diagnoses
     )
