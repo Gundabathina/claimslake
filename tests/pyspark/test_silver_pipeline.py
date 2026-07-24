@@ -105,7 +105,8 @@ def test_build_silver_claims_end_to_end(spark):
     diagnoses = spark.createDataFrame([Row(diagnosis_code="E11")])
     df = spark.createDataFrame([
         _claim(claim_id="OK"),
-        _claim(claim_id="OK", ingestion_timestamp=TS2),       # dup claim_id -> keep latest
+        _claim(claim_id="OK", paid_amount="90.00",
+               ingestion_timestamp=TS2),                      # corrected resubmission -> business-key dup, keep latest
         _claim(claim_id="ORPHAN", diagnosis_code="Z99"),      # bad diagnosis FK
         _claim(claim_id="LATE", service_date="2024-01-01",
                submission_date="2024-06-01"),                 # late arriving (valid)
