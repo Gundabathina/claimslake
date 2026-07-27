@@ -11,8 +11,6 @@
 # (S3 -> MinIO, Redshift -> Postgres/DuckDB). See docs/architecture for the
 # full comparison between this local stack and the AWS reference architecture.
 
-version: "3.9"
-
 x-airflow-common: &airflow-common
   image: apache/airflow:2.9.3-python3.11
   environment:
