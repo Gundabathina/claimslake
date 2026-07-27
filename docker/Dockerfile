@@ -4,24 +4,30 @@
 # executes the pytest suite inside a reproducible container.
 #
 # PySpark requires a JVM, so we start from a slim Python 3.11 base and add a
-# headless JDK 17. Build context is the repository root (see docker-compose.yml
-# / .dockerignore). Build with:
+# headless JRE. The base image (python:3.11-slim) tracks the current Debian
+# release (Trixie), where the correct package is default-jre-headless
+# (Java 21, supported by Spark 4.x). Build context is the repository root
+# (see docker-compose.yml / .dockerignore). Build with:
 #   docker build -f docker/Dockerfile -t claimslake:local .
 # Run the tests with:
 #   docker run --rm claimslake:local
 # --------------------------------------------------------------------------
 FROM python:3.11-slim
 
-# --- System dependencies: JDK 17 for Spark, plus small build/runtime tools ---
+# --- System dependencies: a headless JRE for Spark, plus small tools ---
+# default-jre-headless resolves to the JRE supported by the current Debian
+# release, avoiding hard-coding a version-specific package name that may be
+# dropped between Debian releases.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        openjdk-17-jre-headless \
+        default-jre-headless \
         procps \
         curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Spark/py4j discover Java through JAVA_HOME. The JDK path is arch-specific
-# (arm64 vs amd64), so resolve it dynamically and expose it via a stable symlink.
+# Spark/py4j discover Java through JAVA_HOME. The JDK path is arch- and
+# version-specific, so resolve it dynamically from the installed java binary
+# and expose it via a stable symlink.
 RUN JAVA_DIR="$(dirname "$(dirname "$(readlink -f "$(which java)")")")" \
     && ln -sfn "$JAVA_DIR" /usr/lib/jvm/current-java
 ENV JAVA_HOME=/usr/lib/jvm/current-java \
