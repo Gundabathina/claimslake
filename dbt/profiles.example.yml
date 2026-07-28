@@ -1,0 +1,21 @@
+# ClaimsLake dbt profile (example)
+# ---------------------------------------------------------------------------
+# Copy this file to ~/.dbt/profiles.yml (or set DBT_PROFILES_DIR=dbt and keep
+# it here). Uses dbt-duckdb, which queries the Silver Parquet outputs directly
+# and writes the Gold star schema into a local DuckDB file.
+#
+# Install the adapter:  pip install dbt-duckdb
+# ---------------------------------------------------------------------------
+claimslake:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      # Local DuckDB warehouse file that holds the Gold marts.
+      path: "{{ env_var('CLAIMSLAKE_DUCKDB_PATH', 'gold/claimslake.duckdb') }}"
+      threads: 4
+      # Root directory containing the PySpark Silver Parquet outputs
+      # (silver/claims, silver/members, silver/providers, ...).
+      # Referenced by sources via var("silver_root").
+      extensions:
+        - parquet
