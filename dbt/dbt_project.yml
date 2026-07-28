@@ -1,0 +1,28 @@
+# ClaimsLake Gold layer - dbt project
+# ---------------------------------------------------------------------------
+# Builds the Gold star schema from the PySpark Silver Parquet outputs using
+# dbt-duckdb. DuckDB reads the Silver Parquet files directly (see
+# models/staging/_silver_sources.yml), so no separate load step is required.
+# ---------------------------------------------------------------------------
+name: "claimslake_gold"
+version: "1.0.0"
+config-version: 2
+
+profile: "claimslake"
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  claimslake_gold:
+    staging:
+      +materialized: view
+    marts:
+      +materialized: table
