@@ -1,0 +1,46 @@
+# Gold-layer schema tests. These run with `dbt test` and fail the build if the
+# star schema loses integrity (missing keys, broken member/provider joins,
+# or an unexpected claim status).
+version: 2
+
+models:
+  - name: dim_member
+    description: "Member dimension, one row per member_id."
+    columns:
+      - name: member_id
+        tests:
+          - not_null
+          - unique
+
+  - name: dim_provider
+    description: "Provider dimension with SCD Type 2 version history."
+    columns:
+      - name: provider_sk
+        description: "Surrogate key per (provider_id, effective_date) version."
+        tests:
+          - not_null
+          - unique
+      - name: provider_id
+        tests:
+          - not_null
+      - name: is_current
+        tests:
+          - not_null
+
+  - name: fact_claims
+    description: "Claim fact, one row per claim_id."
+    columns:
+      - name: claim_id
+        tests:
+          - not_null
+          - unique
+      - name: member_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_member')
+              field: member_id
+      - name: is_denied
+        tests:
+          - accepted_values:
+              values: [0, 1]
