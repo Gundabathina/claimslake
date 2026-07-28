@@ -118,8 +118,20 @@ def run_gold(silver_path: str) -> None:
     _banner("Stage 3/3  Gold dbt build")
     start = time.time()
     dbt_dir = os.path.join(REPO_ROOT, "dbt")
+    # dbt runs with cwd=dbt_dir, so a relative DuckDB path in the profile would
+    # resolve under dbt/. Resolve an ABSOLUTE repo-root path and make sure its
+    # parent directory exists, so a fresh clone works with no manual mkdir.
+    duckdb_path = os.environ.get(
+        "CLAIMSLAKE_DUCKDB_PATH",
+        os.path.join(REPO_ROOT, "gold", "claimslake.duckdb"),
+    )
+    duckdb_path = os.path.abspath(duckdb_path)
+    os.makedirs(os.path.dirname(duckdb_path), exist_ok=True)
+    print(f"  Gold DuckDB warehouse: {duckdb_path}", flush=True)
     env = dict(os.environ)
     env.setdefault("DBT_PROFILES_DIR", dbt_dir)
+    # Feed the absolute path to the profile (path: env_var('CLAIMSLAKE_DUCKDB_PATH', ...)).
+    env["CLAIMSLAKE_DUCKDB_PATH"] = duckdb_path
     cmd = ["dbt", "build", "--vars", f"{{silver_root: {os.path.abspath(silver_path)}}}"]
     print(f"  running: {' '.join(cmd)} (cwd={dbt_dir})", flush=True)
     proc = subprocess.run(cmd, cwd=dbt_dir, env=env)
