@@ -1,7 +1,7 @@
 # ClaimsLake â developer convenience commands
 # Usage: make <target>
 
-.PHONY: help up down logs generate-data ingest test lint dbt-run dbt-test airflow-up clean
+.PHONY: help up down logs generate-data ingest test lint dbt-run dbt-test airflow-up clean pipeline
 
 help:
 	@echo "ClaimsLake Makefile targets:"
@@ -50,3 +50,6 @@ airflow-up:
 clean:
 	docker compose down -v --remove-orphans
 	find . -type d -name "__pycache__" -exec rm -rf {} +
+
+pipeline:  ## Run the full local pipeline: Bronze -> Silver -> Gold (dbt)
+	python scripts/run_pipeline.py
