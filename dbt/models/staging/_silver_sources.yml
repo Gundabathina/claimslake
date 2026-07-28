@@ -1,0 +1,41 @@
+# Silver-layer sources for the ClaimsLake Gold (dbt-duckdb) project.
+# ---------------------------------------------------------------------------
+# The PySpark Silver stage writes one Parquet directory per dataset under a
+# common root:
+#     <silver_root>/members
+#     <silver_root>/providers
+#     <silver_root>/diagnoses
+#     <silver_root>/claims        (partitioned)
+#
+# dbt-duckdb reads these Parquet files directly via each table's
+# meta.external_location - no separate load step is required. The root is
+# configurable through var('silver_root') (defaults to the local "silver"
+# directory used by scripts/run_pipeline.py).
+#
+# The read_parquet(...) glob descends into partition subdirectories and unifies
+# schemas across the written part files.
+# ---------------------------------------------------------------------------
+version: 2
+
+sources:
+  - name: silver
+    description: "PySpark Silver Parquet outputs (validated, deduplicated)."
+    # Root directory holding the per-dataset Parquet folders.
+    # Override with:  dbt build --vars '{silver_root: /abs/path/to/silver}'
+    tables:
+      - name: members
+        description: "Deduplicated members, one row per member_id."
+        meta:
+          external_location: "read_parquet('{{ var('silver_root', 'silver') }}/members/**/*.parquet', union_by_name=true, hive_partitioning=true)"
+      - name: providers
+        description: "Providers with SCD Type 2 version history."
+        meta:
+          external_location: "read_parquet('{{ var('silver_root', 'silver') }}/providers/**/*.parquet', union_by_name=true, hive_partitioning=true)"
+      - name: diagnoses
+        description: "Valid diagnosis reference codes."
+        meta:
+          external_location: "read_parquet('{{ var('silver_root', 'silver') }}/diagnoses/**/*.parquet', union_by_name=true, hive_partitioning=true)"
+      - name: claims
+        description: "Validated claims fact (partitioned by service_year_month)."
+        meta:
+          external_location: "read_parquet('{{ var('silver_root', 'silver') }}/claims/**/*.parquet', union_by_name=true, hive_partitioning=true)"
