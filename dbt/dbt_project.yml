@@ -3,6 +3,8 @@
 # Builds the Gold star schema from the PySpark Silver Parquet outputs using
 # dbt-duckdb. DuckDB reads the Silver Parquet files directly (see
 # models/staging/_silver_sources.yml), so no separate load step is required.
+# There are no staging models - staging/ holds only the source definitions -
+# so only the marts config is declared below.
 # ---------------------------------------------------------------------------
 name: "claimslake_gold"
 version: "1.0.0"
@@ -22,7 +24,5 @@ clean-targets:
 
 models:
   claimslake_gold:
-    staging:
-      +materialized: view
     marts:
       +materialized: table
