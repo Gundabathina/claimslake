@@ -1,0 +1,19 @@
+# Airflow orchestration dependencies for ClaimsLake (Stage 3).
+# -----------------------------------------------------------------------------
+# Kept SEPARATE from requirements.txt so installing/running the core pipeline
+# (ingestion + PySpark + dbt) never has to pull in the heavy Airflow stack.
+#
+# Install into an isolated environment, e.g.:
+#     python -m venv .venv-airflow && source .venv-airflow/bin/activate
+#     pip install -r airflow/requirements-airflow.txt
+#
+# Apache Airflow must be installed with its official constraints file for the
+# matching Python version, e.g.:
+#     pip install "apache-airflow==2.9.3" \
+#       --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.9.3/constraints-3.11.txt"
+#
+# The DAG itself only uses the core PythonOperator, so no provider packages are
+# required. The pipeline's own runtime deps (pyspark, dbt-duckdb) are installed
+# from requirements.txt / dbt/requirements-dbt.txt in the environment where the
+# tasks execute.
+apache-airflow==2.9.3
