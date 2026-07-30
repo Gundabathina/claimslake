@@ -7,10 +7,10 @@
 
 locals {
   # Bucket-level ARNs and their object ARNs (arn + /*), for S3 statements.
-  data_bucket_arns     = var.data_bucket_arns
-  data_bucket_objects  = [for a in var.data_bucket_arns : "${a}/*"]
-  results_bucket_arn   = var.athena_results_bucket_arn
-  results_bucket_objs  = "${var.athena_results_bucket_arn}/*"
+  data_bucket_arns    = var.data_bucket_arns
+  data_bucket_objects = [for a in var.data_bucket_arns : "${a}/*"]
+  results_bucket_arn  = var.athena_results_bucket_arn
+  results_bucket_objs = "${var.athena_results_bucket_arn}/*"
 }
 
 # ---- Glue crawler role -----------------------------------------------------
@@ -28,9 +28,9 @@ data "aws_iam_policy_document" "glue_assume" {
 
 resource "aws_iam_role" "glue_crawler" {
   name               = "${var.name_prefix}-glue-crawler"
-  description         = "Least-privilege role assumed by the Silver/Gold Glue crawlers."
-  assume_role_policy  = data.aws_iam_policy_document.glue_assume.json
-  tags                = var.tags
+  description        = "Least-privilege role assumed by the Silver/Gold Glue crawlers."
+  assume_role_policy = data.aws_iam_policy_document.glue_assume.json
+  tags               = var.tags
 }
 
 data "aws_iam_policy_document" "glue_crawler" {
@@ -97,7 +97,7 @@ data "aws_iam_policy_document" "athena_assume" {
 
 resource "aws_iam_role" "athena" {
   name               = "${var.name_prefix}-athena"
-  description         = "Least-privilege role for running Athena queries over the lake."
+  description        = "Least-privilege role for running Athena queries over the lake."
   assume_role_policy = data.aws_iam_policy_document.athena_assume.json
   tags               = var.tags
 }
