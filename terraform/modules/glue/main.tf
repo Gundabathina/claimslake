@@ -7,7 +7,7 @@
 
 resource "aws_glue_catalog_database" "this" {
   name        = replace("${var.name_prefix}_catalog", "-", "_")
-  description  = "ClaimsLake Data Catalog database for Silver and Gold tables."
+  description = "ClaimsLake Data Catalog database for Silver and Gold tables."
 
   tags = var.tags
 }
