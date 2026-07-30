@@ -5,7 +5,8 @@
 #                     tests (lightweight, no JVM). SQL execution tests skip
 #                     gracefully when the Gold warehouse is not built.
 #   * pyspark-tests - PySpark Silver suite (needs a JVM / JDK 17).
-#   * airflow-tests - Airflow DAG import + structure tests (needs Airflow).
+#   * airflow-tests - Airflow DAG import + structure tests (needs Airflow and
+#                     an initialised metadata DB).
 #   * dbt-checks    - dbt parse to validate the Gold project compiles.
 #
 # All jobs run in parallel and cache pip downloads to keep runtime low.
@@ -84,6 +85,14 @@ jobs:
     name: Airflow DAG tests
     runs-on: ubuntu-latest
 
+    # Airflow reads these at import time. AIRFLOW_HOME keeps its state inside
+    # the workspace; the DAGs folder points at the repo's DAGs so DagBag finds
+    # claimslake_pipeline; example DAGs are disabled to keep the run clean.
+    env:
+      AIRFLOW_HOME: ${{ github.workspace }}/.airflow
+      AIRFLOW__CORE__DAGS_FOLDER: ${{ github.workspace }}/airflow/dags
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -101,9 +110,10 @@ jobs:
           pip install -r airflow/requirements-airflow.txt
           pip install -e .
 
+      - name: Initialise Airflow metadata DB
+        run: airflow db migrate
+
       - name: Run Airflow DAG tests
-        env:
-          AIRFLOW__CORE__LOAD_EXAMPLES: "False"
         run: python -m pytest tests/airflow -v
 
   dbt-checks:
