@@ -1,22 +1,21 @@
 # docs/architecture/
 
-Architecture documentation for ClaimsLake.
+Architecture documentation for ClaimsLake. All data is synthetic.
 
-This folder will contain (added incrementally as milestones are built):
+This folder complements the top-level [`README.md`](../../README.md), which contains the primary architecture overview and rendered Mermaid diagrams (high-level architecture, Bronze → Silver → Gold data flow, Airflow orchestration, and the AWS Terraform reference architecture).
 
-- `high_level_architecture.md` - end-to-end system diagram and component overview
-- `data_flow.md` - detailed Bronze -> Silver -> Gold data flow
-- `batch_pipeline.md` - batch pipeline design and scheduling
-- `streaming_demo.md` - optional local Kafka streaming simulation design
-- `ci_cd_flow.md` - GitHub Actions pipeline design
-- `aws_reference_architecture.md` - AWS production design (S3, Glue, Redshift, IAM) vs. local implementation
+Related documentation:
 
-Diagrams are provided as both source (draw.io / mermaid) and exported images in `docs/screenshots`.
+- Silver design rationale: [`spark_jobs/README.md`](../../spark_jobs/README.md) and [`docs/interview_guide/03_pyspark_silver.md`](../interview_guide/03_pyspark_silver.md)
+- Schemas: [`docs/data_dictionary/silver_schemas.md`](../data_dictionary/silver_schemas.md)
+- Column lineage: [`docs/data_lineage/`](../data_lineage/)
+- Analytical SQL: [`docs/analytics_catalog.md`](../analytics_catalog.md)
+- AWS reference architecture: [`terraform/README.md`](../../terraform/README.md)
 
-## Silver layer architecture (Milestone 3)
+## Medallion pipeline (implemented)
 
 ```
-SOURCE -> PYTHON INGESTION -> BRONZE -> PYSPARK SILVER -> (GOLD, later)
+SOURCE -> PYTHON INGESTION -> BRONZE -> PYSPARK SILVER -> GOLD (dbt + DuckDB)
                                              |
                                              +--> QUARANTINE
 ```
@@ -32,11 +31,13 @@ producing:
 - `data_quality/metrics/` - per-run JSON metrics computed from real
   execution.
 
+The Gold stage is implemented with dbt using the dbt-duckdb adapter.
+DuckDB reads the Silver Parquet outputs directly (no separate load step)
+and builds a star schema: `fact_claims`, `dim_member`, and `dim_provider`
+(SCD Type 2 provider history), all covered by dbt tests.
+
 Design highlights: explicit schemas (Bronze is all-string), two-stage
-deterministic deduplication, PRESERVATION of provider historical versions
-for future SCD Type 2, broadcast-join referential-integrity checks,
+deterministic deduplication, preservation of provider historical versions
+for SCD Type 2, broadcast-join referential-integrity checks,
 late-arriving claim flagging, claims batch-1/batch-2 schema normalization,
-and date-based partitioning of the claims fact. Full rationale is in
-`spark_jobs/README.md` and `docs/interview_guide/03_pyspark_silver.md`;
-schemas are in `docs/data_dictionary/silver_schemas.md`; lineage is in
-`docs/data_lineage/`.
+and date-based partitioning of the claims fact.
