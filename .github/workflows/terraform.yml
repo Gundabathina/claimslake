@@ -1,0 +1,55 @@
+# Terraform validation workflow.
+# ---------------------------------------------------------------------------
+# Validates the AWS reference architecture WITHOUT deploying anything: it runs
+# fmt, a backend-less init, and validate. No AWS credentials are needed (and
+# none are configured) because validate does not contact AWS. Scoped with
+# paths so it only runs when Terraform or the workflow files change.
+# ---------------------------------------------------------------------------
+name: Terraform
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform.yml"
+      - ".github/workflows/ci.yml"
+  pull_request:
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform.yml"
+      - ".github/workflows/ci.yml"
+
+concurrency:
+  group: terraform-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: fmt / init / validate
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: terraform
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.5"
+
+      - name: Terraform fmt (check, recursive)
+        run: terraform fmt -check -recursive
+
+      - name: Terraform init (no backend)
+        run: terraform init -backend=false
+
+      - name: Terraform validate
+        run: terraform validate
