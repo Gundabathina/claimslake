@@ -3,7 +3,8 @@
 Two kinds of checks are performed:
 
 1. Static checks (always run): every analytics file exists, is non-empty,
-   and references only real Gold tables. These require no database.
+   and references only real Gold tables (or CTEs it defines itself). These
+   require no database.
 
 2. Execution checks (run only when duckdb is installed AND the Gold
    warehouse has been built): each analytics query is executed against
@@ -31,8 +32,9 @@ ANALYTICS_FILES = [
     SQL_DIR / "data_quality" / "data_quality_analytics.sql",
 ]
 
-# Tables that legitimately exist in the Gold warehouse (dbt marts) plus the
-# Silver quarantine Parquet read via read_parquet in the data-quality file.
+# Real tables that exist in the Gold warehouse (dbt marts). The data-quality
+# file also reads Silver quarantine Parquet via the read_parquet(...) table
+# function, which is allowed explicitly below.
 KNOWN_GOLD_TABLES = {"fact_claims", "dim_member", "dim_provider"}
 
 
@@ -43,6 +45,18 @@ def _strip_sql_comments(sql: str) -> str:
         idx = line.find("--")
         lines.append(line if idx == -1 else line[:idx])
     return "\n".join(lines)
+
+
+def _cte_names(code: str) -> set[str]:
+    """Return names of common-table-expressions defined in the script.
+
+    Matches 'WITH name AS (' and subsequent ', name AS (' so that queries
+    referencing their own CTEs are not flagged as unknown tables.
+    """
+    return {
+        m.group(1).lower()
+        for m in re.finditer(r"(?:\bWITH\b|,)\s*([A-Za-z_]\w*)\s+AS\s*\(", code, re.IGNORECASE)
+    }
 
 
 def _split_statements(sql: str) -> list[str]:
@@ -75,17 +89,16 @@ def test_run_all_references_every_file() -> None:
 @pytest.mark.parametrize("sql_file", ANALYTICS_FILES, ids=lambda p: p.name)
 def test_no_unknown_tables_in_from_clauses(sql_file: Path) -> None:
     """Guard against fabricated schema: every bare identifier used after FROM
-    or JOIN must be a known Gold table (read_parquet(...) is allowed)."""
+    or JOIN must be a known Gold table, a CTE defined in the same file, or the
+    read_parquet(...) table function."""
     code = _strip_sql_comments(sql_file.read_text(encoding="utf-8"))
-    # capture the token immediately after FROM / JOIN
+    allowed = KNOWN_GOLD_TABLES | _cte_names(code) | {"read_parquet"}
     refs = re.findall(r"\b(?:FROM|JOIN)\s+([A-Za-z_][\w]*)", code, flags=re.IGNORECASE)
     for ref in refs:
-        low = ref.lower()
-        if low in {"read_parquet"}:  # table function, handled separately
-            continue
-        assert low in KNOWN_GOLD_TABLES, (
+        assert ref.lower() in allowed, (
             f"{sql_file.name} references unknown table '{ref}'. "
-            f"Allowed: {sorted(KNOWN_GOLD_TABLES)} or read_parquet(...)."
+            f"Allowed: Gold tables {sorted(KNOWN_GOLD_TABLES)}, "
+            f"file CTEs, or read_parquet(...)."
         )
 
 
@@ -104,8 +117,8 @@ warehouse_required = pytest.mark.skipif(
 @pytest.mark.parametrize("sql_file", ANALYTICS_FILES, ids=lambda p: p.name)
 def test_analytics_queries_execute(sql_file: Path) -> None:
     """Execute every statement in each analytics file against the real Gold
-    warehouse. read_parquet paths are relative to the repo root, so we run
-    with the process CWD assumed to be the repo root during CI; DuckDB is
+    warehouse. read_parquet paths are relative to the repo root, so the tests
+    should be invoked with the repo root as the working directory. DuckDB is
     opened read-only so the tests never mutate the warehouse."""
     con = duckdb.connect(str(DUCKDB_PATH), read_only=True)
     try:
