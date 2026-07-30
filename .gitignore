@@ -236,3 +236,18 @@ metastore_db/
 derby.log
 *.crc
 pyspark/logs/
+
+# ---- ClaimsLake project-specific (Gold + generated warehouses) ----
+# Generated Gold dbt build output and local DuckDB warehouse (regenerated locally).
+gold/**
+!gold/README.md
+*.duckdb
+*.duckdb.wal
+
+# ---- Terraform (reference architecture; never applied) ----
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfplan
