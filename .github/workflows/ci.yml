@@ -1,10 +1,14 @@
 # ClaimsLake CI
 # --------------------------------------------------------------------------
-# Runs the PySpark Silver test suite on every push to main and on every pull
-# request. PySpark needs a JVM, so we set up Temurin JDK 17 (matches the
-# docker/Dockerfile runtime). PySpark itself is not in requirements.txt (that
-# file covers the Bronze ingestion layer), so it is installed explicitly here
-# at the same version the container uses.
+# Every push to main and every pull request verifies the whole repository:
+#   * unit-tests    - Bronze ingestion, SQL analytics, and pipeline-script
+#                     tests (lightweight, no JVM). SQL execution tests skip
+#                     gracefully when the Gold warehouse is not built.
+#   * pyspark-tests - PySpark Silver suite (needs a JVM / JDK 17).
+#   * airflow-tests - Airflow DAG import + structure tests (needs Airflow).
+#   * dbt-checks    - dbt parse to validate the Gold project compiles.
+#
+# All jobs run in parallel and cache pip downloads to keep runtime low.
 # --------------------------------------------------------------------------
 name: CI
 
@@ -22,6 +26,30 @@ permissions:
   contents: read
 
 jobs:
+  unit-tests:
+    name: Unit tests (ingestion, sql, scripts)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install duckdb          # required by tests/sql execution checks
+          pip install -e .
+
+      - name: Run ingestion, sql and script tests
+        run: python -m pytest tests/ingestion tests/sql tests/scripts -v
+
   pyspark-tests:
     name: PySpark Silver tests
     runs-on: ubuntu-latest
@@ -51,3 +79,56 @@ jobs:
 
       - name: Run PySpark Silver tests
         run: python -m pytest tests/pyspark -v
+
+  airflow-tests:
+    name: Airflow DAG tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r airflow/requirements-airflow.txt
+          pip install -e .
+
+      - name: Run Airflow DAG tests
+        env:
+          AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+        run: python -m pytest tests/airflow -v
+
+  dbt-checks:
+    name: dbt parse
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dbt dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r dbt/requirements-dbt.txt
+
+      - name: Provide dbt profile
+        run: cp dbt/profiles.example.yml dbt/profiles.yml
+
+      - name: dbt parse (validate Gold project compiles)
+        env:
+          DBT_PROFILES_DIR: dbt
+        run: dbt parse --project-dir dbt
