@@ -3,7 +3,7 @@
 Data lineage documentation: traces each column back through the medallion
 layers to its original source field. All data is synthetic.
 
-## End-to-end flow (through Milestone 3)
+## End-to-end flow
 
 ```
 SOURCE CSV
@@ -13,7 +13,7 @@ SOURCE CSV
        |-> silver/<dataset>                records that passed validation
        |-> silver/quarantine/<dataset>     records that failed (with rejection_reason)
        +-> data_quality/metrics/           per-run JSON metrics
-  -> GOLD (later milestone)                star schema, dim_provider SCD Type 2
+  -> GOLD (dbt + DuckDB)                   star schema; fact_claims, dim_member, dim_provider (SCD Type 2)
 ```
 
 ## Bronze -> Silver column lineage (examples)
@@ -29,12 +29,17 @@ SOURCE CSV
 - `silver.members.state` <- `bronze.members.state`, trimmed/upper-cased;
   invalid codes quarantined.
 - `silver.providers` rows preserve each `(provider_id, effective_date)`
-  version <- `bronze.providers`; this is the raw material for the future
-  `gold.dim_provider` SCD Type 2 columns (`valid_from`/`valid_to`/
-  `is_current`).
+  version <- `bronze.providers`; this feeds the
+  `gold.dim_provider` SCD Type 2 columns (for example `is_current`).
 - Lineage/audit columns `ingestion_timestamp`, `source_file`,
   `file_hash` are carried unchanged from Bronze into Silver so any Silver
   row can be traced back to the exact Bronze file it came from.
 
-A full column-level lineage table and diagram covering Gold will be added
-when the Gold layer is built.
+## Silver -> Gold lineage (examples)
+
+- `gold.fact_claims` <- `silver.claims` (grain preserved: one row per claim),
+  with member and provider foreign keys resolved against the dimensions.
+- `gold.dim_member` <- `silver.members` (one row per member).
+- `gold.dim_provider` <- `silver.providers` versioned rows, exposed as SCD
+  Type 2 with current/historical flags. Models are defined in
+  `dbt/models/marts/` and built by dbt-duckdb directly from the Silver Parquet.
