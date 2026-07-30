@@ -1,7 +1,8 @@
 # ---------------------------------------------------------------------------
 # Athena module: a workgroup that enforces a central query-results location
 # and encrypts results. Enforcement (enforce_workgroup_configuration) stops
-# users overriding the secure result location per query.
+# users overriding the secure result location per query. Results are encrypted
+# with SSE-S3; the lake data buckets support KMS via the s3 module.
 # ---------------------------------------------------------------------------
 
 resource "aws_athena_workgroup" "this" {
@@ -18,8 +19,7 @@ resource "aws_athena_workgroup" "this" {
       output_location = "s3://${var.athena_results_bucket_id}/output/"
 
       encryption_configuration {
-        encryption_option = var.kms_key_arn == null ? "SSE_S3" : "SSE_KMS"
-        kms_key           = var.kms_key_arn
+        encryption_option = "SSE_S3"
       }
     }
   }
