@@ -1,0 +1,20 @@
+# Example variable values. Copy to terraform.tfvars and edit as needed.
+#   cp terraform.tfvars.example terraform.tfvars
+#
+# Everything below has a sensible default in variables.tf, so a plan can run
+# with an empty terraform.tfvars too. Credentials are NOT set here; use the
+# standard AWS credential chain (AWS_PROFILE, env vars, or an IAM role).
+
+aws_region   = "us-east-1"
+project_name = "claimslake"
+environment  = "dev"
+
+# Optional hardening / tuning ------------------------------------------------
+# kms_key_arn                    = "arn:aws:kms:us-east-1:111122223333:key/abcd-..."
+# version_ancillary_buckets      = true
+# athena_results_expiration_days = 14
+
+# extra_tags = {
+#   Owner     = "data-engineering"
+#   CostCenter = "analytics"
+# }
