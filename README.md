@@ -1,259 +1,332 @@
-# ClaimsLake â Healthcare Claims Data Engineering Platform
+# ClaimsLake — Healthcare Claims Data Engineering Platform
 
-**Status:** Actively under construction (portfolio project, built incrementally in public commits). This README is updated at every milestone.
+> An end-to-end, production-style data pipeline that ingests, cleans, models, and analyzes **synthetic** healthcare claims data on a medallion (Bronze → Silver → Gold) architecture.
 
-An end-to-end, production-style data engineering platform that ingests, cleans, models, and analyzes **synthetic** healthcare claims data using a medallion (Bronze/Silver/Gold) architecture.
+[![CI](https://github.com/Gundabathina/claimslake/actions/workflows/ci.yml/badge.svg)](https://github.com/Gundabathina/claimslake/actions/workflows/ci.yml)
+[![Terraform](https://github.com/Gundabathina/claimslake/actions/workflows/terraform.yml/badge.svg)](https://github.com/Gundabathina/claimslake/actions/workflows/terraform.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-## Why this project exists
+## Overview
 
-Health insurers and providers process huge volumes of claims data every day, arriving messy, duplicated, and inconsistent across source systems. Analysts need trustworthy, well-modeled data to answer questions such as which providers have the highest denial rates, which diagnoses drive the most cost, and whether processing times are degrading. ClaimsLake demonstrates how a data engineer would build the pipeline that turns raw claims data into analytics-ready tables.
+ClaimsLake is a portfolio data-engineering project that demonstrates how raw, messy healthcare claims files are turned into trustworthy, analytics-ready tables. It combines Python ingestion, PySpark transformations, a dbt star schema, an analytical SQL layer, Airflow orchestration, containerization, CI, and a Terraform AWS reference architecture — all runnable locally with **synthetic data only**.
 
-**All data used in this project is synthetic**, generated to resemble realistic healthcare claims structures (similar in spirit to CMS synthetic public-use files and the Synthea patient generator). No real patient, member, or provider data is used anywhere in this repository.
+**All data in this repository is synthetic**, generated to resemble realistic healthcare claims structures (similar in spirit to CMS synthetic public-use files and the Synthea generator). No real patient, member, or provider data is used anywhere.
 
-## Architecture (high level)
+## Business problem
 
-```
-Synthetic Data Generators (members, providers, diagnoses, claims)
-        |
-        v
-Python Ingestion Layer (full + incremental load, retries, logging)
-        |
-        v
-Bronze Layer (raw Parquet, partitioned by ingestion date)
-        |
-        v
-Data Quality & Validation checks
-        |
-        v
-Silver Layer (PySpark: cleaned, deduplicated, standardized)
-        |
-        v
-Gold Layer (dbt + SQL: star schema â fact_claims, dim_member, dim_provider (SCD2), dim_diagnosis, dim_date)
-        |
-        v
-Analytics Warehouse (DuckDB/Postgres locally; Redshift design for AWS)
-        |
-        v
-BI / analytical SQL queries
+Insurers and providers process large volumes of claims that arrive messy, duplicated, and inconsistent across source systems. Analysts need clean, well-modeled data to answer questions such as which providers have the highest denial rates, which diagnoses drive the most cost, and whether claim processing times are degrading. ClaimsLake shows how a data engineer builds the pipeline that makes those answers reliable.
 
-Orchestration: Apache Airflow coordinates every stage above.
-CI/CD: GitHub Actions runs lint, unit tests, and dbt tests on every push.
-```
+## Architecture overview
 
-Full architecture diagrams and data lineage docs live in [`docs/architecture`](docs/architecture) and [`docs/data_lineage`](docs/data_lineage).
+ClaimsLake follows the medallion pattern. Synthetic source files are ingested into a raw **Bronze** layer, cleaned and standardized into a validated **Silver** layer (with a quarantine path for bad records), and modeled into a **Gold** star schema with dbt. An analytical SQL layer runs on top of Gold, Airflow orchestrates the stages, and a Terraform reference architecture describes how the same design would map to AWS (S3 + Glue + Athena).
 
-## Architecture diagram
+### High-level architecture
 
 ```mermaid
 flowchart TD
-    A["Synthetic Data Generators<br/>members · providers · diagnoses · claims"] --> B["Python Ingestion Layer<br/>full + incremental load · retries · logging"]
-    B --> C["Bronze Layer<br/>raw Parquet · partitioned by ingestion date"]
-    C --> D["Data Quality &amp; Validation checks"]
-    D --> E["Silver Layer (PySpark)<br/>cleaned · deduplicated · standardized · quarantined"]
-    E --> F["Gold Layer (dbt + SQL)<br/>fact_claims · dim_member · dim_provider (SCD2) · dim_diagnosis · dim_date"]
-    F --> G["Analytics Warehouse<br/>DuckDB / Postgres local · Redshift design for AWS"]
-    G --> H["BI / Analytical SQL"]
-
-    O["Orchestration: Apache Airflow"] -. schedules & monitors .-> B
-    O -. schedules & monitors .-> E
-    O -. schedules & monitors .-> F
+  A["Synthetic data generators<br/>members · providers · diagnoses · claims"] --> B["Python ingestion layer<br/>full + incremental · retries · logging · metadata"]
+  B --> C["Bronze layer<br/>raw Parquet · partitioned by ingestion date"]
+  C --> D["PySpark Silver layer<br/>clean · standardize · deduplicate · validate"]
+  D --> Q["Quarantine<br/>rejected records + reasons"]
+  D --> E["Gold layer (dbt + DuckDB)<br/>fact_claims · dim_member · dim_provider (SCD2)"]
+  E --> F["Analytical SQL layer<br/>35 curated queries"]
+  O["Apache Airflow"] -. orchestrates .-> B
+  O -. orchestrates .-> D
+  O -. orchestrates .-> E
 ```
+
+### End-to-end data flow
+
+```mermaid
+flowchart LR
+  subgraph Bronze
+    B1["raw Parquet<br/>string-typed · ingestion metadata"]
+  end
+  subgraph Silver
+    S1["typed & standardized"] --> S2["deduplicated"] --> S3["validated"]
+    S3 --> S4["quarantine<br/>(failed rules)"]
+  end
+  subgraph Gold
+    G1["dim_member"]
+    G2["dim_provider (SCD2)"]
+    G3["fact_claims"]
+  end
+  B1 --> S1
+  S3 --> G1
+  S3 --> G2
+  S3 --> G3
+  G3 --> R["Analytical SQL results"]
+```
+
+### Airflow orchestration flow
+
+```mermaid
+flowchart LR
+  T1["generate / land source data"] --> T2["ingest to Bronze"]
+  T2 --> T3["Silver PySpark transform"]
+  T3 --> T4["dbt build Gold"]
+  T4 --> T5["dbt tests"]
+```
+
+### AWS Terraform reference architecture
+
+```mermaid
+flowchart TD
+  subgraph S3["Amazon S3 (encrypted · versioned · public access blocked)"]
+    L1["bronze"]
+    L2["silver"]
+    L3["gold"]
+    L4["quarantine"]
+    L5["logs"]
+    L6["athena-results"]
+  end
+  G["AWS Glue Data Catalog<br/>DB + Silver & Gold crawlers"]
+  A["Amazon Athena<br/>workgroup · encrypted results"]
+  IAM["IAM roles<br/>least-privilege (Glue, Athena)"]
+  L2 --> G
+  L3 --> G
+  G --> A
+  A --> L6
+  IAM -. grants .-> G
+  IAM -. grants .-> A
+```
+
+> The Terraform is a **reference architecture only**. It is CI-validated but has **never been planned or applied**, so it creates no AWS resources or costs. See [`terraform/README.md`](terraform/README.md).
 
 ## Technology stack
 
 | Layer | Technology | Purpose |
 |---|---|---|
 | Language | Python 3.11 | Ingestion, utilities, tests |
-| Processing | PySpark | Bronze to Silver to Gold transformations |
-| Lake storage | Parquet (local), MinIO (S3-compatible) | Columnar storage, local S3 simulation |
-| Orchestration | Apache Airflow (Docker) | DAG scheduling, retries, dependencies |
-| Transformation/modeling | dbt | Gold-layer star schema, tests, docs |
-| Local warehouse | DuckDB / Postgres | Stand-in for a cloud warehouse |
-| AWS reference design | S3, Glue, Redshift, IAM (Terraform, documented) | Production-scale cloud architecture |
+| Processing | PySpark | Bronze → Silver transformations |
+| Lake storage | Parquet (local); MinIO (S3-compatible) | Columnar storage, local S3 substitute |
+| Modeling | dbt (dbt-duckdb) | Gold star schema, tests, docs |
+| Local warehouse / query engine | DuckDB | Reads Silver Parquet directly; runs Gold + analytics |
+| Orchestration | Apache Airflow | DAG scheduling, retries, dependencies |
+| Analytics | SQL | 35 curated analytical queries |
 | Containerization | Docker & Docker Compose | Reproducible local environment |
-| IaC | Terraform | AWS resource definitions (not auto-deployed) |
-| CI/CD | GitHub Actions | Lint, tests, dbt tests, build validation |
-| Testing | pytest, dbt tests | Unit and data quality testing |
-| Streaming (optional demo) | Kafka (local Docker) | Local simulation of real-time claim events, clearly labeled as non-production |
+| IaC | Terraform (AWS: S3, Glue, Athena, IAM) | Cloud reference architecture (not applied) |
+| CI | GitHub Actions | Tests + dbt parse + Terraform validation |
+| Testing | pytest, dbt tests | Unit and data-quality testing |
+
+## Key engineering capabilities
+
+- Config-driven ingestion with full/incremental loads, retry handling, structured logging, and per-batch metadata tracking.
+- Schema validation with a **quarantine** path so bad records are isolated with reasons instead of silently dropped.
+- PySpark Silver layer that types, standardizes, deduplicates, and validates every dataset.
+- Slowly-changing-dimension (SCD2) history for providers.
+- Gold star schema modeled in dbt with tests, built directly from Silver Parquet via DuckDB.
+- A curated analytical SQL layer (35 queries) across members, providers, claims, finance, and data quality.
+- Airflow DAG wiring the stages end to end.
+- Multi-job GitHub Actions CI plus a path-filtered Terraform validation workflow.
 
 ## Repository structure
 
 ```
 claimslake/
-âââ docs/                 architecture, data dictionary, lineage, interview guide, screenshots
-âââ data/                 sample synthetic data
-âââ ingestion/            Python ingestion scripts
-âââ processing/           bronze / silver / gold processing code
-âââ spark_jobs/              PySpark transformation jobs
-âââ airflow/dags/         Airflow DAG definitions
-âââ dbt/                  dbt project (staging, marts, tests)
-âââ sql/                  DDL and analytical SQL
-âââ streaming/            optional local Kafka demo
-âââ tests/                pytest unit and data quality tests
-âââ terraform/            AWS reference infrastructure as code
-âââ docker/               Dockerfiles
-âââ scripts/              helper/dev scripts
-âââ config/               pipeline configuration
+├── ingestion/        Python ingestion layer (config-driven, Bronze load)
+├── spark_jobs/       PySpark Silver transformation code
+├── processing/       bronze / silver / gold processing notes
+├── dbt/              dbt project (Gold star schema + tests)
+├── sql/              analytical SQL layer (members, providers, claims, finance, data_quality)
+├── airflow/          Airflow DAG definitions
+├── terraform/        AWS reference infrastructure (S3, Glue, Athena, IAM)
+├── scripts/          data generation + full pipeline runner
+├── tests/            pytest suites (ingestion, pyspark, sql, scripts, airflow)
+├── data/sample/      sample synthetic source data
+├── docker/           Dockerfile
+├── docs/             architecture, lineage, data dictionary, analytics catalog, interview guide
+└── docker-compose.yml
 ```
 
-## Project status / roadmap
+## Dataset descriptions
 
-- [x] Milestone 0 â Repository scaffolding
-- [x] Milestone 1 â Synthetic data generation
-- [x] Milestone 2 â Python ingestion layer (Bronze)
-- [x] Milestone 3 â PySpark Silver transformations
-- [ ] Milestone 4 â Gold star schema via dbt
-- [ ] Milestone 5 â Analytical SQL layer
-- [ ] Milestone 6 â Airflow orchestration
-- [ ] Milestone 7 â Testing suite
-- [ ] Milestone 8 â Docker Compose full stack
-- [ ] Milestone 9 â GitHub Actions CI/CD
-- [ ] Milestone 10 â Terraform AWS reference architecture
-- [ ] Milestone 11 â Optional Kafka streaming demo
-- [ ] Milestone 12 â Full documentation
-- [ ] Milestone 13 â Interview guide
+All datasets are synthetic. Sample files live in [`data/sample/`](data/sample).
 
-## Running the ingestion layer (Milestone 2)
+| Dataset | Grain | Key fields |
+|---|---|---|
+| members | one row per member | member_id, date_of_birth, gender, plan_type, state, enrollment dates |
+| providers | one row per provider version | provider_id, provider_name, specialty, npi, network_status, effective_date |
+| diagnoses | one row per diagnosis code | diagnosis_code, diagnosis_description, category |
+| claims | one row per claim | claim_id, member_id, provider_id, diagnosis_code, service_date, billed_amount, paid_amount, claim_status, denial_reason |
 
-```bash
-pip install -r requirements.txt
-python -m ingestion.src.ingestion_engine --all   # load all sources into Bronze
-pytest tests/ingestion -v                         # run the ingestion tests
-```
-
-The Bronze ingestion framework is configuration-driven and demonstrates full/incremental loads, idempotency (SHA-256 file hashing), retry logic, schema-drift detection, structured logging, and a SQLite ingestion audit log. It preserves source data faithfully in Bronze (Parquet, partitioned by ingestion date) and performs no business transformation. See ingestion/README.md for the full design and docs/interview_guide/02_ingestion_bronze.md for interview Q&A. All data is synthetic.
-
-## Running the Silver layer (Milestone 3)
-
-```bash
-pip install -r requirements.txt
-python -m ingestion.src.ingestion_engine --all   # SOURCE -> BRONZE
-python -m spark_jobs.src.silver_pipeline --all        # BRONZE -> SILVER
-pytest tests/pyspark -v                            # run the PySpark tests
-```
-
-The PySpark Silver layer reads Bronze Parquet and produces cleaned, typed, deduplicated, validated datasets under `silver/`, quarantining invalid records (with reasons) under `silver/quarantine/` rather than dropping them, and writing data-quality metrics to `data_quality/metrics/`. It preserves provider historical versions so the Gold layer can later build an SCD Type 2 dimension, normalizes the claims_batch_1/claims_batch_2 schemas, flags late-arriving claims, and checks referential integrity with broadcast joins. Requires a JVM (Java 11/17) for Spark. See spark_jobs/README.md for the full design and docs/interview_guide/03_pyspark_silver.md for interview Q&A. All data is synthetic.
-
-## Bronze to Silver pipeline
-
-The Silver layer (`spark_jobs/src/silver_pipeline.py`) reads raw Bronze Parquet and produces analytics-ready tables through a deterministic, testable sequence of PySpark transformations:
-
-1. **Read** Bronze Parquet with an explicit, all-`StringType` schema that matches the documented Bronze ingestion contract (raw data is never implicitly typed).
-2. **Clean** (`cleaners.py`) — trim/normalize strings, convert blanks to `NULL`, cast money and date columns to typed values, normalize state codes, and ensure every expected column exists (including nullable ones like `adjustment_amount`).
-3. **Deduplicate** (`deduplication.py`) — drop exact-duplicate rows, then collapse business-key duplicates deterministically, keeping the latest record per key.
-4. **Validate** (`validators.py`) — apply data-quality rules; invalid rows are routed to a quarantine set rather than silently dropped, and referential integrity is checked with broadcast joins.
-5. **Preserve history** — provider records keep historical versions so the Gold layer can build an SCD Type 2 dimension.
-6. **Write** (`writers.py`) — emit clean Silver tables plus data-quality metrics under `data_quality/metrics/`.
-
-## Folder structure
-
-```
-claimslake/
-├── ingestion/            Python Bronze ingestion layer
-│   ├── src/              config loader, file reader, engine, retries, logging, metadata
-│   └── config/           sources.yaml (config-driven ingestion)
-├── spark_jobs/           PySpark Silver transformation jobs
-│   └── src/              cleaners, deduplication, validators, transformations,
-│                         schemas, readers, writers, silver_pipeline, spark_session
-├── tests/                pytest suites
-│   ├── ingestion/        Bronze unit tests
-│   └── pyspark/          Silver unit tests (17 tests) + conftest fixtures
-├── data/sample/          small synthetic sample CSVs
-├── config/               pipeline configuration
-├── docs/                 architecture, data dictionary, lineage, interview guide
-├── dbt/                  Gold-layer dbt project (upcoming milestone)
-├── airflow/dags/         orchestration DAGs
-├── docker/               Dockerfiles
-├── requirements.txt      pinned Python dependencies
-├── pyproject.toml        packaging + pytest configuration
-└── Makefile              common developer commands
-```
-
-## Data quality validations
-
-Validation runs in the Silver layer and treats data quality as a first-class output, not an afterthought:
-
-- **Referential integrity** — claims must reference a known member and provider (checked via broadcast joins).
-- **Domain rules** — member state codes must be valid; a future date of birth is rejected.
-- **Amount checks** — claim monetary fields are validated for sane, typed values.
-- **Late-arriving data** — claims whose service date falls outside the expected ingestion window are *flagged*, not rejected.
-- **Completeness** — a missing ZIP is flagged (not a hard rejection), while structurally invalid rows are quarantined.
-
-Rows that fail hard rules are written to a **quarantine** set and counted in the data-quality metrics, so nothing is silently lost.
-
-## Deduplication strategy
-
-Deduplication happens in two deterministic stages so results are byte-for-byte reproducible:
-
-1. **Exact-duplicate removal** — fully identical rows are collapsed first.
-2. **Business-key deduplication** — for rows sharing a business key (e.g. a resubmitted claim with the same `claim_id` but corrected amounts), the record with the latest `ingestion_timestamp` wins. Ties are broken deterministically so the same input always yields the same output.
-
-This mirrors real claims processing, where the same claim is frequently resubmitted with corrections and only the newest version should survive into Silver.
-
-## Late-arriving data handling
-
-Late-arriving claims are a fact of life in healthcare (claims can be submitted weeks after service). ClaimsLake handles them explicitly: rather than dropping records whose service date precedes the ingestion window, the pipeline sets a **late-arrival flag** on the row and preserves it. Downstream Gold models can then decide how to treat late records (e.g. restate a period or report them separately) instead of losing data at the Silver stage. Boundary behavior is covered by dedicated tests (`test_claims_late_arriving_flag_boundary`).
-
-## How to run locally
+## Quick start
 
 ```bash
 # 1. Create and activate a virtual environment (Python 3.11)
-python3 -m venv .venv
-source .venv/bin/activate
+python -m venv .venv && source .venv/bin/activate
 
 # 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. Run the Bronze ingestion layer
-python ingestion/run_ingestion.py
+# 3. Generate synthetic source data
+python scripts/generate_synthetic_data.py
 
-# 4. Run the PySpark Silver pipeline (requires Java 11/17 for Spark)
-python -m spark_jobs.src.silver_pipeline
+# 4. Run the full Bronze -> Silver -> Gold pipeline
+python scripts/run_pipeline.py
 ```
 
-> **Note:** PySpark needs a JVM. Install Java 17 (e.g. `brew install openjdk@17`) and ensure `JAVA_HOME` is set.
+A `Makefile` wraps the common tasks: `make generate-data`, `make ingest`, `make pipeline`, `make test`, `make dbt-run`, `make dbt-test`, `make up`, `make down`.
 
-## How to run tests
+## Local pipeline execution
 
 ```bash
-# Run the full test suite
-python -m pytest
+# Bronze ingestion only
+python ingestion/run_ingestion.py
 
-# Run only the PySpark Silver tests (17 tests)
-python -m pytest tests/pyspark -v
+# Full pipeline: Bronze -> Silver -> Gold (dbt)
+python scripts/run_pipeline.py
 ```
 
-Expected result for the Silver suite:
+> PySpark requires a local JDK (Java 17 recommended).
 
+## Docker execution
+
+A `docker-compose.yml` defines the local stack (MinIO, Postgres, Airflow).
+
+```bash
+make up      # start the stack (docker compose up -d)
+make down    # stop the stack
 ```
-============================== 17 passed in ~24s ===============================
+
+> **Docker Compose full-stack: pending local verification.** The compose file is provided, but a complete `docker compose up` run has not yet been verified end to end. Do not assume the full containerized stack has been validated.
+
+## Running tests
+
+```bash
+# Full test suite
+pytest tests/ -v
+
+# Targeted suites
+python -m pytest tests/ingestion -v   # Bronze ingestion
+python -m pytest tests/pyspark -v     # PySpark Silver (requires JDK 17)
+python -m pytest tests/sql -v         # SQL analytics checks
+python -m pytest tests/airflow -v     # Airflow DAG structure
 ```
+
+## SQL analytics usage
+
+The [`sql/`](sql) layer contains 35 curated analytical queries grouped by domain (members, providers, claims, finance, data_quality). A master runner is provided:
+
+```bash
+# Example with DuckDB CLI against the Gold outputs
+duckdb < sql/run_all.sql
+```
+
+See [`docs/analytics_catalog.md`](docs/analytics_catalog.md) for the full query catalog.
+
+## dbt usage
+
+The Gold star schema is built with **dbt-duckdb**, which reads the Silver Parquet outputs directly (no separate load step).
+
+```bash
+cd dbt
+dbt run     # build Gold models (dim_member, dim_provider, fact_claims)
+dbt test    # run schema/data tests
+```
+
+## Airflow orchestration
+
+The DAG in [`airflow/dags/claimslake_pipeline.py`](airflow/dags/claimslake_pipeline.py) wires the stages (ingest → Silver → dbt build → dbt test). It can be run via the Docker Compose Airflow services (`make airflow-up`).
+
+## Terraform reference architecture
+
+The [`terraform/`](terraform) directory defines an AWS data-lake reference architecture (S3 layers, Glue Data Catalog + crawlers, Athena workgroup, least-privilege IAM), organized into `s3`, `iam`, `glue`, and `athena` modules.
+
+```bash
+cd terraform
+terraform fmt -check -recursive
+terraform init -backend=false
+terraform validate
+```
+
+> `terraform plan`/`apply` require AWS credentials. This architecture is **reference-only and has never been applied** — it creates no resources or costs. Details in [`terraform/README.md`](terraform/README.md).
+
+## Data quality and quarantine handling
+
+The Silver layer validates every record against business rules. Records that fail (for example future dates of birth, invalid state codes, or malformed keys) are routed to a **quarantine** path with the reason attached, rather than being dropped. Non-fatal issues (such as a missing ZIP) are flagged with data-quality columns but retained. Data-quality queries in [`sql/data_quality/`](sql/data_quality) summarize the results.
 
 ## Sample outputs
 
-Small synthetic sample inputs live in `data/sample/` (e.g. `claims_batch_1_sample.csv`, `members_sample.csv`, `providers_sample.csv`).
+Illustrative schemas below are based strictly on implemented columns (synthetic data). See [`docs/data_dictionary/silver_schemas.md`](docs/data_dictionary/silver_schemas.md) for the full dictionary.
 
-A representative slice of a cleaned Silver `claims` record:
+**Silver `members` (standardized):**
 
-| claim_id | member_id | provider_id | paid_amount | service_date | late_arrival_flag | is_valid |
-|---|---|---|---|---|---|---|
-| CLM1001 | MBR001 | PRV010 | 90.00 | 2024-06-14 | false | true |
-| CLM1002 | MBR002 | PRV011 | 250.00 | 2024-05-30 | true | true |
+| member_id | gender | state | plan_type | has_missing_zip |
+|---|---|---|---|---|
+| M0001 | F | CA | PPO | false |
 
-Alongside the data, the pipeline emits data-quality metrics (row counts, exact duplicates removed, business-key duplicates removed, quarantined rows) to `data_quality/metrics/`.
+**Quarantined record (illustrative):**
+
+| record_key | dataset | quarantine_reason |
+|---|---|---|
+| M0042 | members | date_of_birth in the future |
+
+**Gold `fact_claims` (illustrative):**
+
+| claim_id | member_id | provider_id | billed_amount | paid_amount | claim_status |
+|---|---|---|---|---|---|
+| C10001 | M0001 | P0007 | 1200.00 | 950.00 | PAID |
+
+> These rows are illustrative placeholders showing the shape of the output, not committed execution results.
+
+## Current project status
+
+| Milestone | Status |
+|---|---|
+| Repository scaffolding | ✅ Complete |
+| Synthetic data generation | ✅ Complete |
+| Bronze ingestion (Python) | ✅ Complete |
+| Silver transformations (PySpark) | ✅ Complete |
+| Gold star schema (dbt-duckdb) | ✅ Complete |
+| Analytical SQL layer | ✅ Complete (35 queries) |
+| Airflow orchestration | ✅ Complete |
+| Expanded GitHub Actions CI | ✅ Complete (4 jobs green) |
+| Terraform AWS reference architecture | ✅ Complete (CI-validated, never applied) |
+| End-to-end local execution | ✅ Complete |
+| Docker Compose full-stack | ⏳ Pending local verification |
+| Streaming (Kafka) | ⚪ Optional future enhancement |
+| AWS deployment | ⚪ Reference architecture only — not applied |
+
+### Verified results
+
+- Bronze ingestion: 26 tests passing (verified locally).
+- PySpark Silver: 17 tests passing (verified locally).
+- dbt: PASS=14 (verified locally).
+- SQL analytics: 35 curated queries.
+- Airflow DAG tests: 7 passing (verified locally).
+- CI (GitHub Actions): four application jobs green — unit-tests, pyspark-tests, airflow-tests, dbt-checks.
+- Terraform CI: `fmt -check -recursive`, `init -backend=false`, and `validate` green.
+- Terraform was never planned or applied.
+
+## Limitations
+
+- All data is synthetic; no real claims data is used.
+- The Docker Compose full stack has not yet been verified end to end.
+- The Terraform architecture is reference-only and has not been deployed; `plan`/`apply` require AWS credentials.
+- Streaming is not implemented (optional future work).
 
 ## Future improvements
 
-- Complete the **Gold layer** (dbt star schema: `fact_claims`, `dim_member`, `dim_provider` SCD2, `dim_diagnosis`, `dim_date`).
-- Wire up **Airflow** DAGs to orchestrate Bronze → Silver → Gold end to end.
-- Add an **AWS deployment path** (S3 Bronze/Silver, Glue Catalog, Athena) driven entirely by config and environment variables.
-- Expand data-quality coverage with **Great Expectations** or dbt tests and publish metrics to a dashboard.
-- Add **incremental/CDC** processing for Silver rather than full reprocessing.
+- Verify and document a full `docker compose up` run of the stack.
+- Optional Kafka streaming demo for near-real-time claim events.
+- Expand dbt tests and add exposures/docs generation.
 
-## Honesty note
+## Interview talking points
 
-This is a personal portfolio project built with synthetic data to demonstrate data engineering skills. It does not represent real employment experience, a real company's data, or a live production deployment. Any AWS architecture described is a documented reference design implemented via Terraform; cloud resources are not kept running live to avoid unnecessary cost. See `docs/interview_guide` for a full, honest breakdown of what was actually run versus simulated.
+- Why the medallion (Bronze/Silver/Gold) architecture fits claims data.
+- Quarantine-vs-drop tradeoffs for data quality.
+- SCD2 modeling for provider history.
+- Using dbt-duckdb to model Gold directly from Parquet without a separate load.
+- Structuring multi-job CI and a path-filtered Terraform validation workflow.
+- Designing a least-privilege AWS reference architecture without deploying it.
+
+See [`docs/interview_guide/`](docs/interview_guide) and [`docs/portfolio_content.md`](docs/portfolio_content.md).
+
+## Author
+
+Built by **Gundabathina** as a data-engineering portfolio project. All data is synthetic.
 
 ## License
 
-MIT â see [LICENSE](LICENSE).
+Released under the MIT License. See [`LICENSE`](LICENSE).
