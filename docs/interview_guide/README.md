@@ -29,6 +29,5 @@ When discussing the project, be accurate about what is and is not done:
 - All data is synthetic; no real claims data is used.
 - The Gold layer is built with dbt-duckdb (not Redshift); there is no cloud
   warehouse in the implementation.
-- The full Docker Compose stack has not yet been verified end to end.
 - The Terraform AWS architecture is reference-only and has never been applied.
 - Streaming (Kafka) is not implemented and is optional future work.
