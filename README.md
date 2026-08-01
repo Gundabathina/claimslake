@@ -189,7 +189,7 @@ make up      # start the stack (docker compose up -d)
 make down    # stop the stack
 ```
 
-> **Docker Compose full-stack: pending local verification.** The compose file is provided, but a complete `docker compose up` run has not yet been verified end to end. Do not assume the full containerized stack has been validated.
+> **Docker Compose full-stack: verified locally.** A full `docker compose down -v && docker compose up --build` run brings the stack up successfully — Postgres becomes healthy, the Airflow metadata database is initialized, `airflow-init` completes, the webserver and scheduler start, and the PySpark test suite passes inside the app container (17/17). See [`docker/README.md`](docker/README.md).
 
 ## Running tests
 
@@ -284,7 +284,7 @@ Illustrative schemas below are based strictly on implemented columns (synthetic 
 | Expanded GitHub Actions CI | ✅ Complete (4 jobs green) |
 | Terraform AWS reference architecture | ✅ Complete (CI-validated, never applied) |
 | End-to-end local execution | ✅ Complete |
-| Docker Compose full-stack | ⏳ Pending local verification |
+| Docker Compose full-stack | ✅ Complete (verified locally) |
 | Streaming (Kafka) | ⚪ Optional future enhancement |
 | AWS deployment | ⚪ Reference architecture only — not applied |
 
@@ -302,13 +302,12 @@ Illustrative schemas below are based strictly on implemented columns (synthetic 
 ## Limitations
 
 - All data is synthetic; no real claims data is used.
-- The Docker Compose full stack has not yet been verified end to end.
 - The Terraform architecture is reference-only and has not been deployed; `plan`/`apply` require AWS credentials.
 - Streaming is not implemented (optional future work).
 
 ## Future improvements
 
-- Verify and document a full `docker compose up` run of the stack.
+- Publish a short screen-capture / walkthrough of the full `docker compose up` stack running.
 - Optional Kafka streaming demo for near-real-time claim events.
 - Expand dbt tests and add exposures/docs generation.
 
