@@ -76,4 +76,4 @@ It is a reference architecture for the portfolio, not a live deployment. It is v
 The Terraform models it directly: S3 for the Bronze/Silver/Gold/quarantine/logs/results layers, Glue Data Catalog with Silver and Gold crawlers for schema discovery, Athena for serverless SQL, and least-privilege IAM roles for Glue and Athena. PySpark would run on Glue or EMR.
 
 **10. What are the honest limitations?**
-All data is synthetic. The full Docker Compose stack has not yet been verified end to end. The Terraform is reference-only and never deployed. Streaming is not implemented and remains optional future work.
+All data is synthetic. The Terraform is reference-only and never deployed (CI-validated only). Streaming is not implemented and remains optional future work.
