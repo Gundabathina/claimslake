@@ -32,18 +32,18 @@ using synthetic data only.
 - Airflow DAG tests: 7 passing (verified locally).
 - CI (GitHub Actions): four application jobs green.
 - Terraform CI: `fmt -check -recursive`, `init -backend=false`, and `validate` green.
+- Docker Compose stack: `docker compose up --build` verified locally — Postgres healthy, Airflow metadata DB initialized, `airflow-init` completes, webserver and scheduler start, and the PySpark suite passes in the app container.
 
 ### Known limitations
 
 - All data is synthetic; no real claims data is used anywhere.
-- The full Docker Compose stack (`docker compose up`) has **not** yet been verified end to end and is labeled *pending local verification*.
 - The Terraform AWS architecture is **reference-only and has never been planned or applied** — it creates no AWS resources or cost. `plan`/`apply` require AWS credentials.
 - Streaming (Kafka) is **not implemented**; it remains optional future work.
 - Test counts above were verified in earlier local runs; CI enforces the suites on every push.
 
 ### Future roadmap
 
-- Verify and document a full `docker compose up` run of the local stack.
+- Publish a short screen capture of the full `docker compose up` stack running.
 - Optional Kafka streaming demo for near-real-time claim events.
 - Expand dbt tests and add exposures / generated docs.
 - Optional (non-goal for this release): an actual AWS deployment of the Terraform reference architecture.
