@@ -251,3 +251,10 @@ gold/**
 crash.log
 crash.*.log
 *.tfplan
+
+# Local macOS and development files
+.DS_Store
+.airflow/
+.venv-airflow/
+dbt/.user.yml
+dbt/profiles.yml
