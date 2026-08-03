@@ -39,8 +39,11 @@ WORKDIR /app
 
 # --- Python dependencies (cached layer: re-runs only when these files change) ---
 COPY requirements.txt pyproject.toml ./
+COPY dbt/requirements-dbt.txt ./dbt/requirements-dbt.txt
+
 RUN pip install --upgrade pip \
     && pip install -r requirements.txt \
+    && pip install -r dbt/requirements-dbt.txt \
     && pip install pyspark==4.0.0
 
 # --- Application code ---
