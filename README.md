@@ -2,6 +2,8 @@
 
 > An end-to-end, production-style data pipeline that ingests, cleans, models, and analyzes **synthetic** healthcare claims data on a medallion (Bronze → Silver → Gold) architecture.
 
+### 🔗 [**Live Demo →**](https://claimslake.vercel.app) &nbsp;·&nbsp; a recruiter-facing walkthrough of this pipeline's architecture, engineering decisions, and analytics (source in [`webapp/`](webapp))
+
 [![CI](https://github.com/Gundabathina/claimslake/actions/workflows/ci.yml/badge.svg)](https://github.com/Gundabathina/claimslake/actions/workflows/ci.yml)
 [![Terraform](https://github.com/Gundabathina/claimslake/actions/workflows/terraform.yml/badge.svg)](https://github.com/Gundabathina/claimslake/actions/workflows/terraform.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -136,6 +138,7 @@ claimslake/
 ├── data/sample/      sample synthetic source data
 ├── docker/           Dockerfile
 ├── docs/             architecture, lineage, data dictionary, analytics catalog, interview guide
+├── webapp/           public recruiter-facing web app (React/Vite) — deployed at claimslake.vercel.app
 └── docker-compose.yml
 ```
 
